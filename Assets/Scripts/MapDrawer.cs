@@ -8,6 +8,7 @@ public class MapDrawer : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Tilemap roomTilemap;
+    [SerializeField] private Tilemap decorTilemap;
     [SerializeField] private Tilemap selectTilemap;
     [SerializeField] private Tilemap dijkstraTilemap;
     [SerializeField] private RuleTile floorTile;
@@ -36,6 +37,22 @@ public class MapDrawer : MonoBehaviour
     public void UnselectTile(Vector3Int location)
     {
         selectTilemap.SetTile(location, null);
+    }
+
+    public void SetEntrance(Vector3Int location, bool active)
+    {
+        if (active)
+            decorTilemap.SetTile(location, entranceTile);
+        else
+            decorTilemap.SetTile(location, null);
+    }
+
+    public void SetExit(Vector3Int location, bool active)
+    {
+        if (active)
+            decorTilemap.SetTile(location, exitTile);
+        else
+            decorTilemap.SetTile(location, null);
     }
 
     public void DrawTiles(int[,] tiles)
@@ -107,6 +124,29 @@ public class MapDrawer : MonoBehaviour
     {
         dijkstraTilemap.ClearAllTiles();
 
+        foreach (var numberTile in numberTiles)
+        {
+            Destroy(numberTile.gameObject);
+        }
+        numberTiles.Clear();
+    }
+
+    public void DrawAStar(List<Vector2Int> path)
+    {
+        int count = 0;
+        foreach (var point in path)
+        {
+            var position = roomTilemap.GetCellCenterWorld((Vector3Int)point);
+            var numberTile = Instantiate(numberPrefab, position, Quaternion.identity, roomTilemap.transform).GetComponent<NumberTile>();
+            numberTile.SetValue(count);
+
+            numberTiles.Add(numberTile);
+            count++;
+        }
+    }
+
+    public void ClearAStar()
+    {
         foreach (var numberTile in numberTiles)
         {
             Destroy(numberTile.gameObject);

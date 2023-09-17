@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -11,6 +12,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private CameraController cameraController;
     [SerializeField] private GeneratorSelectionUI selectionUI;
+    [SerializeField] private LegendUI legendUI;
 
     [Header("Data")]
     [SerializeField] private int seed;
@@ -25,15 +27,19 @@ public class GameManager : MonoBehaviour
 
     private int[,] currentMap;
     private int[,] currentDijstra;
-    private Vector3Int selectedLocation;
+    private List<Vector2Int> currentAStar;
+    [SerializeField] private Vector3Int selectedLocation;
+    [SerializeField] private Vector3Int entranceLocation;
+    [SerializeField] private Vector3Int exitLocation;
 
     [SerializeField] private GeneratorAlgorithm currentAlgorithm;
     private bool dijstraIsDrawn;
+    private bool astarIsDrawn;
 
     private void Awake()
     {
         currentMap = null;
-        selectedLocation = Vector3Int.back;
+        selectedLocation = entranceLocation = exitLocation = Vector3Int.back;
         currentAlgorithm = Enum.GetValues(typeof(GeneratorAlgorithm)).Cast<GeneratorAlgorithm>().Min();
         seed = -1;
 
@@ -56,42 +62,162 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        // Highlight any floor tile
+        HighlightTile();
+
+        if (Input.GetMouseButtonDown(0)) // Left Click places entrance
         {
-            SelectTile();
+            if (selectedLocation != Vector3Int.back)
+            {
+                // If exit is already here
+                if (exitLocation == selectedLocation)
+                {
+                    // Do nothing
+                }
+                // De-select entrance if same location chosen
+                else if (entranceLocation == selectedLocation)
+                {
+                    mapDrawer.SetEntrance(entranceLocation, false);
+                    entranceLocation = Vector3Int.back;
+                }
+                else
+                {
+                    // If we had a previous entrance, remove it first
+                    if (entranceLocation != Vector3Int.back)
+                    {
+                        mapDrawer.SetEntrance(entranceLocation, false);
+                    }
+
+                    entranceLocation = selectedLocation;
+                    mapDrawer.SetEntrance(entranceLocation, true);
+                }
+            }
+        }
+        else if (Input.GetMouseButtonDown(1)) // Right click places exit
+        {
+            if (selectedLocation != Vector3Int.back)
+            {
+                // If entrance is already here
+                if (entranceLocation == selectedLocation)
+                {
+                    // Do nothing
+                }
+                // De-select exit if same location chosen
+                else if (exitLocation == selectedLocation)
+                {
+                    mapDrawer.SetExit(exitLocation, false);
+                    exitLocation = Vector3Int.back;
+                }
+                else
+                {
+                    // If we had a previous entrance, remove it first
+                    if (exitLocation != Vector3Int.back)
+                    {
+                        mapDrawer.SetExit(exitLocation, false);
+                    }
+
+                    exitLocation = selectedLocation;
+                    mapDrawer.SetExit(exitLocation, true);
+                }
+            }
         }
     }
 
-    private void SelectTile()
+    private void HighlightTile()
     {
+        // Make sure map exits
+        if (currentMap == null)
+            return;
+
         Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         Vector3Int selectedLocation = new Vector3Int(Mathf.FloorToInt(mouseWorldPosition.x), Mathf.FloorToInt(mouseWorldPosition.y));
 
+        // If same location, then dip
+        if (this.selectedLocation == selectedLocation)
+            return;
+
         // Check bounds
         if (selectedLocation.x < 0 || selectedLocation.y < 0 || selectedLocation.x >= width || selectedLocation.y >= height)
+        {
+            Unhighlight();
+
             return;
+        }
 
         // Do nothing if we did not select a floor
         if (currentMap[selectedLocation.x, selectedLocation.y] != 1)
-            return;
-
-        if (this.selectedLocation == selectedLocation)
         {
-            // Deselect
-            mapDrawer.UnselectTile(selectedLocation);
-            this.selectedLocation = Vector3Int.back;
+            Unhighlight();
+
+            return;
+        }
+
+        // Unselect previous location
+        Unhighlight();
+
+        // Select new location
+        mapDrawer.SelectTile(selectedLocation);
+        Highlight();
+
+        this.selectedLocation = selectedLocation;
+    }
+
+    private void Highlight()
+    {
+        // Show legend mesasge based on entrance/exit state
+
+        string entranceText;
+        // Entrance is set
+        if (entranceLocation != Vector3Int.back)
+        {
+            // If you are hovering exit
+            if (selectedLocation == exitLocation)
+            {
+                entranceText = "-";
+            }
+            else
+            {
+                entranceText = "Move Entrance";
+            }
+
         }
         else
         {
-            // Unselect previous location
-            if (this.selectedLocation != Vector3Int.back)
-            {
-                mapDrawer.UnselectTile(this.selectedLocation);
-            }
+            entranceText = "Set Entrance";
+        }
 
-            // Select new location
-            mapDrawer.SelectTile(selectedLocation);
-            this.selectedLocation = selectedLocation;
+        string exitText;
+        // Exit is set
+        if (exitLocation != Vector3Int.back)
+        {
+            // If you are hovering exit
+            if (selectedLocation == entranceLocation)
+            {
+                exitText = "-";
+            }
+            else
+            {
+                exitText = "Move Exit";
+            }
+        }
+        else
+        {
+            exitText = "Set Exit";
+        }
+
+        legendUI.Show(entranceText, exitText);
+    }
+
+    private void Unhighlight()
+    {
+        if (this.selectedLocation != Vector3Int.back)
+        {
+            mapDrawer.UnselectTile(this.selectedLocation);
+
+            // Hide
+            legendUI.Hide();
+
+            this.selectedLocation = Vector3Int.back;
         }
     }
 
@@ -191,7 +317,7 @@ public class GameManager : MonoBehaviour
 
     public void GenerateMapWithCurrentAlgorithm()
     {
-        mapDrawer.UnselectTile(selectedLocation);
+        CleanMap();
 
         // Use random seed if input is 0
         int seedToUse = seed;
@@ -223,21 +349,72 @@ public class GameManager : MonoBehaviour
 
     public void ToggleDijstraMap()
     {
-        if (currentMap == null || selectedLocation == Vector3Int.back)
+        // If we don't have an active map or entrance was not placed
+        if (currentMap == null || entranceLocation == Vector3Int.back)
         {
             return;
         }
 
         if (!dijstraIsDrawn)
         {
-            currentDijstra = mapGenerator.dijkstraMap.Generate(currentMap, (Vector2Int)selectedLocation);
+            currentDijstra = mapGenerator.dijkstraMap.Generate(currentMap, (Vector2Int)entranceLocation);
             mapDrawer.DrawDijkstraMap(currentDijstra);
         }
         else
         {
+            currentDijstra = null;
             mapDrawer.ClearDijkstraMap();
         }
 
         dijstraIsDrawn = !dijstraIsDrawn;
+    }
+
+    public void ToggleAStarPath()
+    {
+        // If we don't have an active map or entrance was not placed
+        if (currentMap == null || entranceLocation == Vector3Int.back)
+        {
+            return;
+        }
+
+        if (!astarIsDrawn)
+        {
+            currentAStar = mapGenerator.aStar.FindShortestPath((Vector2Int)entranceLocation, (Vector2Int)exitLocation, currentMap);
+            mapDrawer.DrawAStar(currentAStar);
+        }
+        else
+        {
+            currentAStar = null;
+            mapDrawer.ClearAStar();
+        }
+
+        astarIsDrawn = !astarIsDrawn;
+    }
+
+    private void CleanMap()
+    {
+        // Clear Dijstra
+        if (dijstraIsDrawn)
+        {
+            ToggleDijstraMap();
+        }
+
+        // Clear highlight
+        if (selectedLocation != Vector3Int.back)
+        {
+            mapDrawer.UnselectTile(selectedLocation);
+        }
+
+        // Clear entrance
+        if (entranceLocation != Vector3Int.back)
+        {
+            mapDrawer.SetEntrance(entranceLocation, false);
+        }
+
+        // Clear exit
+        if (exitLocation != Vector3Int.back)
+        {
+            mapDrawer.SetExit(exitLocation, false);
+        }
     }
 }

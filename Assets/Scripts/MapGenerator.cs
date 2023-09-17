@@ -15,6 +15,7 @@ public class MapGenerator : ScriptableObject
     public PerlinNoise perlinNoise;
 
     public DijkstraMap dijkstraMap;
+    public AStar aStar;
 
     public void Initialize()
     {
@@ -25,5 +26,6 @@ public class MapGenerator : ScriptableObject
         perlinNoise = new PerlinNoise();
 
         dijkstraMap = new DijkstraMap();
+        aStar = new AStar();
     }
 }
