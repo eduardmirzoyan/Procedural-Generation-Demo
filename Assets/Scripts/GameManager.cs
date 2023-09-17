@@ -13,6 +13,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private CameraController cameraController;
     [SerializeField] private GeneratorSelectionUI selectionUI;
     [SerializeField] private LegendUI legendUI;
+    [SerializeField] private PathfindingUI pathfindingUI;
 
     [Header("Data")]
     [SerializeField] private int seed;
@@ -45,6 +46,8 @@ public class GameManager : MonoBehaviour
 
         mapGenerator = ScriptableObject.CreateInstance<MapGenerator>();
         mapGenerator.Initialize();
+
+        CheckPathfindingState();
     }
 
     private void Start()
@@ -79,6 +82,7 @@ public class GameManager : MonoBehaviour
                 {
                     mapDrawer.SetEntrance(entranceLocation, false);
                     entranceLocation = Vector3Int.back;
+                    UpateLegend(selectedLocation);
                 }
                 else
                 {
@@ -90,8 +94,11 @@ public class GameManager : MonoBehaviour
 
                     entranceLocation = selectedLocation;
                     mapDrawer.SetEntrance(entranceLocation, true);
+                    UpateLegend(selectedLocation);
                 }
             }
+
+            CheckPathfindingState();
         }
         else if (Input.GetMouseButtonDown(1)) // Right click places exit
         {
@@ -107,6 +114,7 @@ public class GameManager : MonoBehaviour
                 {
                     mapDrawer.SetExit(exitLocation, false);
                     exitLocation = Vector3Int.back;
+                    UpateLegend(selectedLocation);
                 }
                 else
                 {
@@ -118,8 +126,32 @@ public class GameManager : MonoBehaviour
 
                     exitLocation = selectedLocation;
                     mapDrawer.SetExit(exitLocation, true);
+                    UpateLegend(selectedLocation);
                 }
             }
+
+            CheckPathfindingState();
+        }
+    }
+
+    private void CheckPathfindingState()
+    {
+        if (entranceLocation != Vector3Int.back)
+        {
+            pathfindingUI.SetDijstra(true);
+        }
+        else
+        {
+            pathfindingUI.SetDijstra(false);
+        }
+
+        if (entranceLocation != Vector3Int.back && exitLocation != Vector3Int.back)
+        {
+            pathfindingUI.SetAStar(true);
+        }
+        else
+        {
+            pathfindingUI.SetAStar(false);
         }
     }
 
@@ -157,52 +189,64 @@ public class GameManager : MonoBehaviour
 
         // Select new location
         mapDrawer.SelectTile(selectedLocation);
-        Highlight();
+
+        UpateLegend(selectedLocation);
 
         this.selectedLocation = selectedLocation;
     }
 
-    private void Highlight()
+    private void UpateLegend(Vector3Int location)
     {
         // Show legend mesasge based on entrance/exit state
 
         string entranceText;
-        // Entrance is set
-        if (entranceLocation != Vector3Int.back)
+        // If you are hovering exit
+        if (location == exitLocation)
         {
-            // If you are hovering exit
-            if (selectedLocation == exitLocation)
+            entranceText = "-";
+        }
+        // Entrance is set
+        else if (entranceLocation != Vector3Int.back)
+        {
+            // If you are hoving over entrance
+            if (location == entranceLocation)
             {
-                entranceText = "-";
+                entranceText = "[Left Click] to Remove Entrance";
             }
             else
             {
-                entranceText = "Move Entrance";
+                entranceText = "[Left Click] to Move Entrance";
             }
 
         }
         else
         {
-            entranceText = "Set Entrance";
+            entranceText = "[Left Click] to Set Entrance";
         }
 
         string exitText;
-        // Exit is set
-        if (exitLocation != Vector3Int.back)
+
+        // If you are hovering exit
+        if (location == entranceLocation)
         {
-            // If you are hovering exit
-            if (selectedLocation == entranceLocation)
+            exitText = "-";
+        }
+        // Exit is set
+        else if (exitLocation != Vector3Int.back)
+        {
+            // If you are hoving over exit
+            if (location == exitLocation)
             {
-                exitText = "-";
+                exitText = "[Left Click] to Remove Exit";
             }
             else
             {
-                exitText = "Move Exit";
+                exitText = "[Right Click] to Move Exit";
             }
         }
         else
         {
-            exitText = "Set Exit";
+            exitText = "[Right Click] to Set Exit";
         }
 
         legendUI.Show(entranceText, exitText);
@@ -355,6 +399,14 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // If we already have astar
+        if (astarIsDrawn)
+        {
+            currentAStar = null;
+            mapDrawer.ClearAStar();
+            astarIsDrawn = false;
+        }
+
         if (!dijstraIsDrawn)
         {
             currentDijstra = mapGenerator.dijkstraMap.Generate(currentMap, (Vector2Int)entranceLocation);
@@ -375,6 +427,14 @@ public class GameManager : MonoBehaviour
         if (currentMap == null || entranceLocation == Vector3Int.back)
         {
             return;
+        }
+
+        // If we already have astar
+        if (dijstraIsDrawn)
+        {
+            currentDijstra = null;
+            mapDrawer.ClearDijkstraMap();
+            dijstraIsDrawn = false;
         }
 
         if (!astarIsDrawn)
@@ -399,6 +459,11 @@ public class GameManager : MonoBehaviour
             ToggleDijstraMap();
         }
 
+        if (astarIsDrawn)
+        {
+            ToggleAStarPath();
+        }
+
         // Clear highlight
         if (selectedLocation != Vector3Int.back)
         {
@@ -409,12 +474,16 @@ public class GameManager : MonoBehaviour
         if (entranceLocation != Vector3Int.back)
         {
             mapDrawer.SetEntrance(entranceLocation, false);
+            entranceLocation = Vector3Int.back;
         }
 
         // Clear exit
         if (exitLocation != Vector3Int.back)
         {
             mapDrawer.SetExit(exitLocation, false);
+            exitLocation = Vector3Int.back;
         }
+
+        CheckPathfindingState();
     }
 }

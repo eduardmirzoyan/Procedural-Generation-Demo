@@ -137,6 +137,10 @@ public class MapDrawer : MonoBehaviour
         foreach (var point in path)
         {
             var position = roomTilemap.GetCellCenterWorld((Vector3Int)point);
+
+            dijkstraTilemap.SetTile((Vector3Int)point, selectTile);
+            dijkstraTilemap.SetColor((Vector3Int)point, Color.white);
+
             var numberTile = Instantiate(numberPrefab, position, Quaternion.identity, roomTilemap.transform).GetComponent<NumberTile>();
             numberTile.SetValue(count);
 
@@ -147,6 +151,8 @@ public class MapDrawer : MonoBehaviour
 
     public void ClearAStar()
     {
+        dijkstraTilemap.ClearAllTiles();
+
         foreach (var numberTile in numberTiles)
         {
             Destroy(numberTile.gameObject);

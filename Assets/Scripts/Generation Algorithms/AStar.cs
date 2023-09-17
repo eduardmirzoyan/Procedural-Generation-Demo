@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.IO.LowLevel.Unsafe;
 using UnityEngine;
 
 public class AStar
@@ -25,13 +26,6 @@ public class AStar
 
     public List<Vector2Int> FindShortestPath(Vector2Int start, Vector2Int end, int[,] tiles)
     {
-        // TODO
-
-        return new List<Vector2Int>();
-    }
-
-    private List<Vector2Int> FindPath(Vector2Int start, Vector2Int end)
-    {
         // Find path using A*
         var open = new List<Node>(); // Makes sure no copies are kept, idealy should be prio queue
         var closed = new List<Node>();
@@ -51,15 +45,6 @@ public class AStar
 
             if (currentNode.location == end)
             {
-                // Debug
-                // Debug.Log(open.Count);
-                // string debug = "Open: ";
-                // foreach (var location in open)
-                // {
-                //     debug += location.location + " ";
-                // }
-                // Debug.Log(debug);
-
                 // Return finalized path
                 return GetFinalPath(startNode, currentNode);
             }
@@ -70,14 +55,20 @@ public class AStar
             {
                 var neighbor = currentNode.location + direction;
 
-                // Make node
-                var neighborNode = new Node(neighbor);
+                // Check out of bounds
+                if (neighbor.x < 0 || neighbor.x >= tiles.GetLength(0) || neighbor.y < 0 || neighbor.y >= tiles.GetLength(1))
+                    continue;
+
+                // Check for wall
+                if (tiles[neighbor.x, neighbor.y] == 0)
+                    continue;
 
                 // Skip if closed contains node
                 if (closed.Any(node => node.location == neighbor))
-                {
                     continue;
-                }
+
+                // Make node
+                var neighborNode = new Node(neighbor);
 
                 // Update values
                 neighborNode.G = ManhattanDistance(start, neighbor); // G
