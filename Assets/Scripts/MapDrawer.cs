@@ -2,18 +2,24 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using System.Linq;
 
 public class MapDrawer : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private Tilemap roomTilemap;
     [SerializeField] private Tilemap selectTilemap;
+    [SerializeField] private Tilemap dijkstraTilemap;
     [SerializeField] private RuleTile floorTile;
     [SerializeField] private RuleTile wallTile;
     [SerializeField] private Tile entranceTile;
     [SerializeField] private Tile exitTile;
     [SerializeField] private GameObject numberPrefab;
     [SerializeField] private Tile selectTile;
+
+    [Header("Data")]
+    [SerializeField] private Color minColor;
+    [SerializeField] private Color maxColor;
 
     private List<NumberTile> numberTiles;
 
@@ -61,20 +67,46 @@ public class MapDrawer : MonoBehaviour
 
     public void DrawDijkstraMap(int[,] map)
     {
+        float maxValue = 0;
+
+        // Label map
         for (int i = 0; i < map.GetLength(0); i++)
         {
             for (int j = 0; j < map.GetLength(1); j++)
             {
-                var position = roomTilemap.GetCellCenterWorld(new Vector3Int(i, j));
+                var location = new Vector3Int(i, j);
+                var value = map[i, j];
+                var position = roomTilemap.GetCellCenterWorld(location);
                 var numberTile = Instantiate(numberPrefab, position, Quaternion.identity, roomTilemap.transform).GetComponent<NumberTile>();
-                numberTile.SetValue(map[i, j]);
+                numberTile.SetValue(value);
                 numberTiles.Add(numberTile);
+
+                maxValue = Mathf.Max(maxValue, value);
+            }
+        }
+
+        // Color map
+        for (int i = 0; i < map.GetLength(0); i++)
+        {
+            for (int j = 0; j < map.GetLength(1); j++)
+            {
+                var location = new Vector3Int(i, j);
+                var value = map[i, j];
+
+                if (value >= 0)
+                {
+                    Color color = Color.Lerp(minColor, maxColor, value / maxValue);
+                    dijkstraTilemap.SetTile(location, selectTile);
+                    dijkstraTilemap.SetColor(location, color);
+                }
             }
         }
     }
 
     public void ClearDijkstraMap()
     {
+        dijkstraTilemap.ClearAllTiles();
+
         foreach (var numberTile in numberTiles)
         {
             Destroy(numberTile.gameObject);

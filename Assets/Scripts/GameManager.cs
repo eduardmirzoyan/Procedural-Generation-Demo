@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public enum GeneratorAlgorithm { UniformRandom, DiffusionLimitedAggregation, DrunkardsWalk };
 public class GameManager : MonoBehaviour
 {
     [Header("References")]
@@ -19,6 +18,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int height;
     [SerializeField] private int steps;
     [SerializeField] private int cullChance;
+    [SerializeField] private int roomWidth;
+    [SerializeField] private int roomHeight;
+    [SerializeField] private float threshold;
+    [SerializeField] private float scale;
 
     private int[,] currentMap;
     private int[,] currentDijstra;
@@ -33,6 +36,9 @@ public class GameManager : MonoBehaviour
         selectedLocation = Vector3Int.back;
         currentAlgorithm = Enum.GetValues(typeof(GeneratorAlgorithm)).Cast<GeneratorAlgorithm>().Min();
         seed = -1;
+
+        mapGenerator = ScriptableObject.CreateInstance<MapGenerator>();
+        mapGenerator.Initialize();
     }
 
     private void Start()
@@ -42,6 +48,10 @@ public class GameManager : MonoBehaviour
         selectionUI.UpdateHeightText(height);
         selectionUI.UpdateCullChanceText(cullChance);
         selectionUI.UpdateNumStepsText(steps);
+        selectionUI.UpdateRoomWidth(roomWidth);
+        selectionUI.UpdateRoomHeight(roomHeight);
+        selectionUI.UpdateThreshold(threshold);
+        selectionUI.UpdateScale(scale);
     }
 
     private void Update()
@@ -117,6 +127,30 @@ public class GameManager : MonoBehaviour
         selectionUI.UpdateNumStepsText(steps);
     }
 
+    public void SetRoomWidth(float roomWidth)
+    {
+        this.roomWidth = (int)roomWidth;
+        selectionUI.UpdateRoomWidth(roomWidth);
+    }
+
+    public void SetRoomHeight(float roomHeight)
+    {
+        this.roomHeight = (int)roomHeight;
+        selectionUI.UpdateRoomHeight(roomHeight);
+    }
+
+    public void SetThreshold(float threshold)
+    {
+        this.threshold = threshold;
+        selectionUI.UpdateThreshold(threshold);
+    }
+
+    public void SetScale(float scale)
+    {
+        this.scale = scale;
+        selectionUI.UpdateScale(scale);
+    }
+
     public void NextAlgorithm()
     {
         // If we are at the top algorthim
@@ -167,13 +201,19 @@ public class GameManager : MonoBehaviour
         switch (currentAlgorithm)
         {
             case GeneratorAlgorithm.UniformRandom:
-                currentMap = mapGenerator.GenerateViaUniformRandom(seedToUse, width, height, cullChance);
+                currentMap = mapGenerator.uniformRandom.Generate(seedToUse, width, height, cullChance);
                 break;
             case GeneratorAlgorithm.DiffusionLimitedAggregation:
-                currentMap = mapGenerator.GenerateViaAggregation(seedToUse, width, height, steps);
+                currentMap = mapGenerator.diffusionLimitedAggregation.Generate(seedToUse, width, height, steps);
                 break;
             case GeneratorAlgorithm.DrunkardsWalk:
-                currentMap = mapGenerator.GenerateViaDrunkardsWalk(seedToUse, width, height, cullChance, steps);
+                currentMap = mapGenerator.drunkardsWalk.Generate(seedToUse, width, height, cullChance, steps);
+                break;
+            case GeneratorAlgorithm.IssacRoomGeneration:
+                currentMap = mapGenerator.issacRoomGeneration.Generate(seedToUse, width, height, roomWidth, roomHeight, steps);
+                break;
+            case GeneratorAlgorithm.PerlinNoise:
+                currentMap = mapGenerator.perlinNoise.Generate(seedToUse, width, height, threshold, scale);
                 break;
         }
 
@@ -190,7 +230,7 @@ public class GameManager : MonoBehaviour
 
         if (!dijstraIsDrawn)
         {
-            currentDijstra = mapGenerator.GenerateDijkstraMap(currentMap, (Vector2Int)selectedLocation);
+            currentDijstra = mapGenerator.dijkstraMap.Generate(currentMap, (Vector2Int)selectedLocation);
             mapDrawer.DrawDijkstraMap(currentDijstra);
         }
         else
