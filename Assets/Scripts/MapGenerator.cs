@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum GeneratorAlgorithm { UniformRandom, DiffusionLimitedAggregation, DrunkardsWalk, IssacRoomGeneration, PerlinNoise };
+public enum GeneratorAlgorithm { UniformRandom, DiffusionLimitedAggregation, DrunkardsWalk, IssacRoomGeneration, PerlinNoise, BinarySpacePartition };
 
 public class MapGenerator : ScriptableObject
 {
@@ -13,6 +13,7 @@ public class MapGenerator : ScriptableObject
     public DrunkardsWalk drunkardsWalk;
     public IssacRoomGeneration issacRoomGeneration;
     public PerlinNoise perlinNoise;
+    public BinarySpacePartition binarySpacePartition;
 
     public DijkstraMap dijkstraMap;
     public AStar aStar;
@@ -24,6 +25,7 @@ public class MapGenerator : ScriptableObject
         drunkardsWalk = new DrunkardsWalk();
         issacRoomGeneration = new IssacRoomGeneration();
         perlinNoise = new PerlinNoise();
+        binarySpacePartition = new BinarySpacePartition();
 
         dijkstraMap = new DijkstraMap();
         aStar = new AStar();

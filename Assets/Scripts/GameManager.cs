@@ -385,6 +385,9 @@ public class GameManager : MonoBehaviour
             case GeneratorAlgorithm.PerlinNoise:
                 currentMap = mapGenerator.perlinNoise.Generate(seedToUse, width, height, threshold, scale);
                 break;
+            case GeneratorAlgorithm.BinarySpacePartition:
+                currentMap = mapGenerator.binarySpacePartition.Generate(seedToUse, width, height, roomWidth, roomHeight);
+                break;
         }
 
         mapDrawer.DrawTiles(currentMap);
