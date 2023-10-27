@@ -15,7 +15,6 @@ public class PerlinNoise
         {
             for (int j = 0; j < tiles.GetLength(1); j++)
             {
-
                 float noise = GetNoiseAtLocation(i, j, scale, offset);
                 if (noise > threshold)
                 {
