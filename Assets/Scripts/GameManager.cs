@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -388,10 +387,14 @@ public class GameManager : MonoBehaviour
             case GeneratorAlgorithm.BinarySpacePartition:
                 currentMap = mapGenerator.binarySpacePartition.Generate(seedToUse, width, height, roomWidth, roomHeight);
                 break;
+            case GeneratorAlgorithm.VoronoiDiagram:
+                currentMap = mapGenerator.voronoiDiagram.Generate(seedToUse, width, height, roomWidth);
+                break;
         }
 
         mapDrawer.DrawTiles(currentMap);
         cameraController.CenterCamera(width, height);
+
     }
 
     public void ToggleDijstraMap()
@@ -488,5 +491,20 @@ public class GameManager : MonoBehaviour
         }
 
         CheckPathfindingState();
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Vector3 size = new Vector3(roomWidth, roomWidth);
+        print(size.x);
+        for (int i = 0; i < roomWidth; i++)
+        {
+            for (int j = 0; j < roomWidth; j++)
+            {
+                Vector3 position = new Vector3(i, j) * roomWidth + size / 2;
+                Gizmos.DrawWireCube(position, size);
+            }
+        }
     }
 }

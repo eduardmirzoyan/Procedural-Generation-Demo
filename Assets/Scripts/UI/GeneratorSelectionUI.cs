@@ -62,8 +62,8 @@ public class GeneratorSelectionUI : MonoBehaviour
             case GeneratorAlgorithm.IssacRoomGeneration:
                 algorithmNameText.text = "Binding Of Issac";
                 cullHolder.SetActive(false);
-                stepsHolder.SetActive(true);
-                roomHeightHolder.SetActive(true);
+                stepsHolder.SetActive(false);
+                roomHeightHolder.SetActive(false);
                 roomWidthHolder.SetActive(true);
                 thresholdHolder.SetActive(false);
                 scaleHolder.SetActive(false);
@@ -74,6 +74,15 @@ public class GeneratorSelectionUI : MonoBehaviour
                 stepsHolder.SetActive(false);
                 roomHeightHolder.SetActive(false);
                 roomWidthHolder.SetActive(false);
+                thresholdHolder.SetActive(true);
+                scaleHolder.SetActive(true);
+                break;
+            case GeneratorAlgorithm.VoronoiDiagram:
+                algorithmNameText.text = "Voronoi Diagram";
+                cullHolder.SetActive(false);
+                stepsHolder.SetActive(false);
+                roomHeightHolder.SetActive(false);
+                roomWidthHolder.SetActive(true);
                 thresholdHolder.SetActive(true);
                 scaleHolder.SetActive(true);
                 break;
