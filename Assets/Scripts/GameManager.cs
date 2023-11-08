@@ -390,6 +390,9 @@ public class GameManager : MonoBehaviour
             case GeneratorAlgorithm.VoronoiDiagram:
                 currentMap = mapGenerator.voronoiDiagram.Generate(seedToUse, width, height, roomWidth);
                 break;
+            case GeneratorAlgorithm.CellularAutomata:
+                currentMap = mapGenerator.cellularAutomata.Generate(seedToUse, width, height, cullChance, steps);
+                break;
         }
 
         mapDrawer.DrawTiles(currentMap);

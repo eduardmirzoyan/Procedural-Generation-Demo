@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class BinarySpacePartition
 {
+
+    // NON-FUNCTIONAL
+
     private struct Room
     {
         public Vector2Int position;

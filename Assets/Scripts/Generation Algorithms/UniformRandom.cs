@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class UniformRandom
 {
-    public int[,] Generate(int seed, int width, int height, int floorChance)
+    public int[,] Generate(int seed, int width, int height, int cullPercentage)
     {
         System.Random rng = new(seed);
         // 0 == Wall | 1 == Floor
@@ -14,7 +14,7 @@ public class UniformRandom
         {
             for (int j = 0; j < tiles.GetLength(1); j++)
             {
-                if (rng.Next(100) < floorChance)
+                if (rng.Next(100) < cullPercentage)
                 {
                     tiles[i, j] = 1;
                 }

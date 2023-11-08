@@ -86,6 +86,15 @@ public class GeneratorSelectionUI : MonoBehaviour
                 thresholdHolder.SetActive(true);
                 scaleHolder.SetActive(true);
                 break;
+            case GeneratorAlgorithm.CellularAutomata:
+                algorithmNameText.text = "Cellular Automata";
+                cullHolder.SetActive(true);
+                stepsHolder.SetActive(true);
+                roomHeightHolder.SetActive(false);
+                roomWidthHolder.SetActive(false);
+                thresholdHolder.SetActive(false);
+                scaleHolder.SetActive(false);
+                break;
             default:
                 algorithmNameText.text = "UNHANDLED ALGO!";
                 cullHolder.SetActive(false);

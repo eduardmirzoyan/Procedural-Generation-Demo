@@ -8,6 +8,9 @@ using UnityEngine;
 
 public class VoronoiDiagram
 {
+
+    // NON-FUNCTIONAL
+
     public int[,] Generate(int seed, int mapWidth, int mapHeight, int gridSize)
     {
         // 0 == Wall | 1 == Floor
